@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:postgres@localhost:5432/kanbam"
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum CardPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  workspaces WorkspaceMember[]
+  cards      Card[] @relation("CardAssignee")
+  comments   Comment[]
+  activities ActivityLog[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  members WorkspaceMember[]
+  boards  Board[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  role        WorkspaceRole @default(MEMBER)
+
+  userId      String
+  workspaceId String
+
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  createdAt   DateTime @default(now())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  columns Column[]
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  order     Int
+
+  boardId   String
+  board     Board @relation(fields: [boardId], references: [id])
+
+  cards     Card[]
+}
+
+model Card {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  priority     CardPriority @default(MEDIUM)
+  dueDate      DateTime?
+  createdAt    DateTime     @default(now())
+
+  columnId     String
+  column       Column @relation(fields: [columnId], references: [id])
+
+  assigneeId   String?
+  assignee     User? @relation("CardAssignee", fields: [assigneeId], references: [id])
+
+  comments     Comment[]
+  labels       CardLabel[]
+  attachments  Attachment[]
+  activities   ActivityLog[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  cardId    String
+  userId    String
+
+  card Card @relation(fields: [cardId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Label {
+  id    String @id @default(cuid())
+  name  String
+  color String
+
+  cards CardLabel[]
+}
+
+model CardLabel {
+  cardId  String
+  labelId String
+
+  card  Card  @relation(fields: [cardId], references: [id])
+  label Label @relation(fields: [labelId], references: [id])
+
+  @@id([cardId, labelId])
+}
+
+model Attachment {
+  id        String @id @default(cuid())
+  name      String
+  url       String
+
+  cardId    String
+  card      Card @relation(fields: [cardId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  createdAt DateTime @default(now())
+
+  userId    String
+  cardId    String
+
+  user User @relation(fields: [userId], references: [id])
+  card Card @relation(fields: [cardId], references: [id])
+}
