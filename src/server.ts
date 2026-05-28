@@ -1,4 +1,3 @@
-
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -16,54 +15,69 @@ import { boardRoutes } from './routes/boards'
 import { columnRoutes } from './routes/columns'
 import { cardRoutes } from './routes/cards'
 
+const app = Fastify({
+  logger: true
+})
 
-const app = Fastify()
+async function bootstrap() {
+  try {
+    await app.register(cors)
 
-app.register(cors)
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: 'Kanbam API',
+          description: 'Kanbam Project Management API',
+          version: '1.0.0'
+        },
 
-app.register(swagger, {
-  openapi: {
-    info: {
-      title: 'Kanbam API',
-      description: 'Kanbam Project Management API',
-      version: '1.0.0'
-    },
+        servers: [
+          {
+            url:
+              process.env.RENDER_EXTERNAL_URL ||
+              `http://localhost:${+(process.env?.PORT ?? '10000')}`
+          }
+        ],
 
-    servers: [
-      {
-        url: `http://localhost:${+(process.env?.PORT ?? '10000')}`
-      }
-    ],
-
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT'
+            }
+          }
         }
       }
-    }
+    })
+
+    await app.register(swaggerUI, {
+      routePrefix: '/docs'
+    })
+
+    await app.register(jwt, {
+      secret: process.env.JWT_SECRET || 'supersecret'
+    })
+
+    await app.register(authRoutes)
+    await app.register(userRoutes)
+    await app.register(workspaceRoutes)
+    await app.register(boardRoutes)
+    await app.register(columnRoutes)
+    await app.register(cardRoutes)
+
+    const port = +(process.env?.PORT ?? '10000')
+
+    await app.listen({
+      port,
+      host: '0.0.0.0'
+    })
+
+    console.log(`HTTP Server Running on port ${port}`)
+  } catch (err) {
+    app.log.error(err)
+    process.exit(1)
   }
-})
+}
 
-app.register(swaggerUI, {
-  routePrefix: '/docs'
-})
-
-app.register(jwt, {
-  secret: 'supersecret'
-})
-
-app.register(authRoutes)
-app.register(userRoutes)
-app.register(workspaceRoutes)
-app.register(boardRoutes)
-app.register(columnRoutes)
-app.register(cardRoutes)
-
-app.listen({
-  port: +(process.env?.PORT ?? '10000')
-}).then(() => {
-  console.log('HTTP Server Running')
-})
+bootstrap()
