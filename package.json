@@ -8,7 +8,6 @@
     "prisma:migrate": "prisma migrate dev",
     "build": "tsc"
   },
-  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
