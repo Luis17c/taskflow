@@ -2,9 +2,6 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
-console.log(process.cwd())
-console.log(process.env.JWT_SECRET)
-
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
@@ -34,7 +31,7 @@ app.register(swagger, {
 
     servers: [
       {
-        url: 'http://localhost:3333'
+        url: `http://localhost:${+(process.env?.PORT ?? '10000')}`
       }
     ],
 
@@ -66,7 +63,7 @@ app.register(columnRoutes)
 app.register(cardRoutes)
 
 app.listen({
-  port: 3333
+  port: +(process.env?.PORT ?? '10000')
 }).then(() => {
   console.log('HTTP Server Running')
 })
