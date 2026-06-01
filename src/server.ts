@@ -21,7 +21,21 @@ const app = Fastify({
 
 async function bootstrap() {
   try {
-    await app.register(cors)
+    await app.register(cors, {
+      origin: true,
+      methods: [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'OPTIONS'
+      ],
+      allowedHeaders: [
+        'Authorization',
+        'Content-Type'
+      ]
+    })
 
     await app.register(swagger, {
       openapi: {
