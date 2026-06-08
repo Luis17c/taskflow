@@ -434,6 +434,104 @@ export async function cardRoutes(app: FastifyInstance) {
     }
   )
 
+  app.patch(
+    '/cards/:id/sprint',
+    {
+      preHandler: [authMiddleware],
+
+      schema: {
+        tags: ['Cards'],
+
+        summary: 'Move card to sprint',
+
+        description: 'Assign card to a sprint, or send it back to the backlog with sprintId null',
+
+        security: [
+          {
+            bearerAuth: []
+          }
+        ],
+
+        params: {
+          type: 'object',
+
+          required: ['id'],
+
+          properties: {
+            id: {
+              type: 'string'
+            }
+          }
+        },
+
+        body: {
+          type: 'object',
+
+          required: ['sprintId'],
+
+          properties: {
+            sprintId: {
+              type: ['string', 'null'],
+              examples: ['clx123456']
+            }
+          }
+        }
+      }
+    },
+
+    async (request, reply) => {
+      const { id } = request.params as {
+        id: string
+      }
+
+      const body = request.body as {
+        sprintId: string | null
+      }
+
+      // sprintId null = back to backlog, no validation needed
+      if (body.sprintId) {
+        const card = await prisma.card.findUnique({
+          where: { id },
+
+          include: {
+            column: true
+          }
+        })
+
+        if (!card) {
+          return reply.code(404).send({
+            message: 'Card not found'
+          })
+        }
+
+        const sprint = await prisma.sprint.findUnique({
+          where: { id: body.sprintId }
+        })
+
+        if (!sprint) {
+          return reply.code(404).send({
+            message: 'Sprint not found'
+          })
+        }
+
+        // A card can only join a sprint of its own board
+        if (sprint.boardId !== card.column.boardId) {
+          return reply.code(409).send({
+            message: 'Sprint does not belong to the same board as the card'
+          })
+        }
+      }
+
+      return prisma.card.update({
+        where: { id },
+
+        data: {
+          sprintId: body.sprintId
+        }
+      })
+    }
+  )
+
   app.delete(
     '/cards/:id',
     {

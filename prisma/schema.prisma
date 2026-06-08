@@ -18,6 +18,12 @@ enum CardPriority {
   HIGH
 }
 
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -63,6 +69,22 @@ model Board {
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   columns Column[]
+  sprints Sprint[]
+}
+
+model Sprint {
+  id        String       @id @default(cuid())
+  name      String
+  goal      String?
+  startDate DateTime
+  endDate   DateTime
+  status    SprintStatus @default(PLANNED)
+  createdAt DateTime     @default(now())
+
+  boardId   String
+  board     Board @relation(fields: [boardId], references: [id])
+
+  cards     Card[]
 }
 
 model Column {
@@ -89,6 +111,9 @@ model Card {
 
   assigneeId   String?
   assignee     User? @relation("CardAssignee", fields: [assigneeId], references: [id])
+
+  sprintId     String?
+  sprint       Sprint? @relation(fields: [sprintId], references: [id])
 
   comments     Comment[]
   labels       CardLabel[]

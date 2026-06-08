@@ -14,6 +14,7 @@ import { workspaceRoutes } from './routes/workspaces'
 import { boardRoutes } from './routes/boards'
 import { columnRoutes } from './routes/columns'
 import { cardRoutes } from './routes/cards'
+import { sprintRoutes } from './routes/sprints'
 
 const app = Fastify({
   logger: true
@@ -79,6 +80,7 @@ async function bootstrap() {
     await app.register(boardRoutes)
     await app.register(columnRoutes)
     await app.register(cardRoutes)
+    await app.register(sprintRoutes)
 
     const port = +(process.env?.PORT ?? '10000')
 
